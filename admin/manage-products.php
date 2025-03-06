@@ -87,6 +87,8 @@ $result = $conn->query($sql);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Products - BENFABRICS</title>
+    <link rel="shortcut icon" href="../assets/images/fav.png" type="image/x-icon">
+
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
@@ -222,4 +224,4 @@ $result = $conn->query($sql);
         </div>
     </div>
 </body>
-</html> 
+</html>

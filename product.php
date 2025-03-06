@@ -60,9 +60,31 @@ $has_results = $result->num_rows > 0;
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Essential Meta Tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Browse our premium selection of Aso Ebi fabrics at BENFABRICS. Find quality fabrics with competitive pricing and fast delivery in Nigeria." />
+    <meta name="keywords" content="Aso Ebi fabrics, premium fabrics, Nigerian fabrics, BENFABRICS, fabric collection, quality fabrics" />
+    <link rel="canonical" href="https://www.benfabrics.landcraft.site/product.php" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:title" content="Products - BENFABRICS" />
+    <meta property="og:description" content="Browse our premium selection of Aso Ebi fabrics at BENFABRICS. Find quality fabrics with competitive pricing and fast delivery in Nigeria." />
+    <meta property="og:image" content="https://www.benfabrics.landcraft.site/assets/images/hero1.avif" />
+    <meta property="og:url" content="https://www.benfabrics.landcraft.site/product.php" />
+    <meta property="og:type" content="website" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Products - BENFABRICS" />
+    <meta name="twitter:description" content="Browse our premium selection of Aso Ebi fabrics at BENFABRICS. Find quality fabrics with competitive pricing and fast delivery in Nigeria." />
+    <meta name="twitter:image" content="https://www.benfabrics.landcraft.site/assets/images/hero1.avif" />
+
     <title>Products - BENFABRICS</title>
+    <link rel="shortcut icon" href="./assets/images/fav.png" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -225,7 +247,7 @@ $has_results = $result->num_rows > 0;
                             <?php if (!empty($row['description'])): ?>
                                 <p class="text-gray-600 mb-4 text-sm"><?php echo htmlspecialchars($row['description']); ?></p>
                             <?php endif; ?>
-                            <a href="https://wa.me/your_number?text=<?php 
+                            <a href="https://wa.me/08096983079?text=<?php 
                                 $message = 'Hello! I\'m interested in this fabric. ';
                                 $message .= 'Color: ' . $row['color'] . '. ';
                                 $message .= 'Price: ₦' . number_format($row['price'], 2) . ' per yard. ';

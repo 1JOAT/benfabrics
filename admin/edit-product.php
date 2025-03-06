@@ -65,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product - BENFABRICS Admin</title>
+    <link rel="shortcut icon" href="../assets/images/fav.png" type="image/x-icon">
+
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
