@@ -35,11 +35,11 @@ if (isset($_GET['id'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] == 'update' && isset($_POST['product_id'])) {
         $product_id = intval($_POST['product_id']);
-        $name = trim($_POST['name']);
-        $description = trim($_POST['description']);
-        $price = floatval($_POST['price']);
-        $fabric_type = trim($_POST['fabric_type']);
-        $stock = intval($_POST['stock']);
+    $name = trim($_POST['name']);
+    $description = trim($_POST['description']);
+    $price = floatval($_POST['price']);
+    $fabric_type = trim($_POST['fabric_type']);
+    $stock = intval($_POST['stock']);
 
         // Start transaction
         $conn->begin_transaction();
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
             // Handle new image uploads
             if (isset($_FILES['new_images']) && isset($_POST['new_colors'])) {
-                $target_dir = "../assets/images/products/";
+        $target_dir = "../assets/images/products/";
                 if (!file_exists($target_dir)) {
                     mkdir($target_dir, 0777, true);
                 }
@@ -102,8 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 for ($i = 0; $i < $total_new_images; $i++) {
                     if ($_FILES['new_images']['error'][$i] == 0) {
                         $file_extension = strtolower(pathinfo($_FILES["new_images"]["name"][$i], PATHINFO_EXTENSION));
-                        $new_filename = uniqid() . '.' . $file_extension;
-                        $target_file = $target_dir . $new_filename;
+        $new_filename = uniqid() . '.' . $file_extension;
+        $target_file = $target_dir . $new_filename;
 
                         // Verify file type
                         $allowed_types = array('jpg', 'jpeg', 'png', 'gif');
@@ -141,19 +141,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 // Then set the selected image as primary
                 $primary_image_id = intval($_POST['primary_image']);
                 $sql = "UPDATE product_images SET is_primary = 1 WHERE id = ? AND product_id = ?";
-                $stmt = $conn->prepare($sql);
+    $stmt = $conn->prepare($sql);
                 $stmt->bind_param("ii", $primary_image_id, $product_id);
                 $stmt->execute();
             }
 
             $conn->commit();
-            $success_message = "Product updated successfully!";
+        $success_message = "Product updated successfully!";
 
-            // Refresh product data
+        // Refresh product data
             $sql = "SELECT * FROM products WHERE id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $product_id);
-            $stmt->execute();
+        $stmt->execute();
             $product = $stmt->get_result()->fetch_assoc();
 
             $img_sql = "SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC";
@@ -203,52 +203,52 @@ if (!$product) {
     </nav>
 
     <div class="max-w-7xl mx-auto py-6 px-4">
-        <?php if ($success_message): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                <?php echo htmlspecialchars($success_message); ?>
-            </div>
-        <?php endif; ?>
+            <?php if ($success_message): ?>
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    <?php echo htmlspecialchars($success_message); ?>
+                </div>
+            <?php endif; ?>
 
-        <?php if ($error_message): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <?php echo htmlspecialchars($error_message); ?>
-            </div>
-        <?php endif; ?>
+            <?php if ($error_message): ?>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <?php echo htmlspecialchars($error_message); ?>
+                </div>
+            <?php endif; ?>
 
-        <div class="bg-white shadow rounded-lg p-6">
+            <div class="bg-white shadow rounded-lg p-6">
             <h2 class="text-2xl font-bold mb-6">Edit Product</h2>
             <form method="POST" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Product Name</label>
-                        <input type="text" name="name" value="<?php echo htmlspecialchars($product['name']); ?>" 
-                               required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Product Name</label>
+                            <input type="text" name="name" value="<?php echo htmlspecialchars($product['name']); ?>" 
+                                   required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                        </div>
 
-                    <div>
+                        <div>
                         <label class="block text-sm font-medium text-gray-700">Price</label>
                         <input type="number" name="price" step="0.01" value="<?php echo $product['price']; ?>" 
-                               required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                                   required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Fabric Type</label>
+                            <input type="text" name="fabric_type" value="<?php echo htmlspecialchars($product['fabric_type']); ?>" 
+                                   required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Stock</label>
+                            <input type="number" name="stock" value="<?php echo $product['stock']; ?>" 
+                                   required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                        </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Fabric Type</label>
-                        <input type="text" name="fabric_type" value="<?php echo htmlspecialchars($product['fabric_type']); ?>" 
-                               required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Stock</label>
-                        <input type="number" name="stock" value="<?php echo $product['stock']; ?>" 
-                               required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <label class="block text-sm font-medium text-gray-700">Description</label>
                     <textarea name="description" rows="3" 
                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"><?php echo htmlspecialchars($product['description']); ?></textarea>
                 </div>
@@ -309,7 +309,7 @@ if (!$product) {
                             </div>
                         </div>
                     </div>
-                    
+
                     <button type="button" onclick="addNewImageField()" 
                             class="text-purple-600 hover:text-purple-700">
                         + Add Another Image
@@ -317,17 +317,17 @@ if (!$product) {
                 </div>
 
                 <div class="flex justify-end space-x-3">
-                    <a href="manage-products.php" 
-                       class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">
-                        Cancel
-                    </a>
+                        <a href="manage-products.php" 
+                           class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">
+                            Cancel
+                        </a>
                     <button type="submit" 
-                            class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
-                        Update Product
-                    </button>
-                </div>
-            </form>
-        </div>
+                                class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                            Update Product
+                        </button>
+                    </div>
+                </form>
+            </div>
     </div>
 
     <script>

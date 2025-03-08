@@ -1,6 +1,12 @@
 <?php
 session_start();
-// require_once '../includes/config.php';
+
+// Check if already logged in
+if (isset($_SESSION['admin_id'])) {
+    header("Location: dashboard.php");
+    exit;
+}
+
 require_once '../includes/db.php';
 
 $error = '';
@@ -11,22 +17,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $sql = "SELECT id, username, password FROM users WHERE username = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s",$username);
+    $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows == 1) {
         $user = $result->fetch_assoc();
         if (password_verify($password, $user['password'])) {
+            // Set session variables
             $_SESSION['admin_id'] = $user['id'];
             $_SESSION['admin_username'] = $user['username'];
-            header("Location: dashboard.php");
-            exit;
+            
+            // Send JSON response for AJAX
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'redirect' => 'dashboard.php']);
+            exit();
         } else {
             $error = "Invalid password";
         }
     } else {
         $error = "Invalid username";
+    }
+    
+    // If there was an error, send it back as JSON
+    if ($error) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $error]);
+        exit();
     }
 }
 ?>
@@ -37,8 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - BENFABRICS</title>
-    <link rel="shortcut icon" href="./assets/images/fav.png" type="image/x-icon">
-
+    <link rel="shortcut icon" href="../assets/images/fav.png" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
@@ -49,12 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     Admin Login
                 </h2>
             </div>
-            <?php if ($error): ?>
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                    <?php echo htmlspecialchars($error); ?>
-                </div>
-            <?php endif; ?>
-            <form class="mt-8 space-y-6" method="POST">
+            <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded hidden">
+            </div>
+            <form id="loginForm" class="mt-8 space-y-6" method="POST">
                 <div class="rounded-md shadow-sm -space-y-px">
                     <div>
                         <label for="username" class="sr-only">Username</label>
@@ -78,5 +91,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </form>
         </div>
     </div>
+
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const errorDiv = document.getElementById('error-message');
+        
+        fetch('login.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                errorDiv.textContent = data.error;
+                errorDiv.classList.remove('hidden');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            errorDiv.textContent = 'An error occurred. Please try again.';
+            errorDiv.classList.remove('hidden');
+        });
+    });
+    </script>
 </body>
 </html> 
