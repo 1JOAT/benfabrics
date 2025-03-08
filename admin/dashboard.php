@@ -19,12 +19,12 @@ $recent_activity_sql = "
 ";
 $recent_activity = $conn->query($recent_activity_sql);
 
-// Get product statistics
+// Get product statistics with the new structure
 $stats_sql = "SELECT 
-    COUNT(*) as total_products,
-    COUNT(DISTINCT color) as unique_colors,
-    COUNT(DISTINCT fabric_type) as fabric_types
-FROM products";
+    (SELECT COUNT(*) FROM products) as total_products,
+    (SELECT COUNT(DISTINCT color) FROM product_images) as unique_colors,
+    (SELECT COUNT(DISTINCT fabric_type) FROM products) as fabric_types
+FROM dual";
 $stats = $conn->query($stats_sql)->fetch_assoc();
 
 ?>
@@ -81,7 +81,40 @@ $stats = $conn->query($stats_sql)->fetch_assoc();
                         </a>
                     </div>
                 </div>
-                <!-- Add more stat cards for unique colors and fabric types -->
+
+                <!-- Color Variations Card -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold">Color Variations</h4>
+                                <p class="text-2xl font-bold text-purple-600"><?php echo $stats['unique_colors']; ?></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fabric Types Card -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold">Fabric Types</h4>
+                                <p class="text-2xl font-bold text-purple-600"><?php echo $stats['fabric_types']; ?></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Quick Actions -->

@@ -16,53 +16,78 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Create directory if it doesn't exist
             $target_dir = "../assets/images/products/";
             if (!file_exists($target_dir)) {
-                // Create the directory structure recursively
                 mkdir($target_dir, 0777, true);
             }
 
             $name = trim($_POST['name']);
             $description = trim($_POST['description']);
             $price = floatval($_POST['price']);
-            $color = trim($_POST['color']);
             $fabric_type = trim($_POST['fabric_type']);
             $stock = intval($_POST['stock']);
 
-            // Handle image upload
-            $image_url = '';
-            if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-                $file_extension = strtolower(pathinfo($_FILES["image"]["name"], PATHINFO_EXTENSION));
-                $new_filename = uniqid() . '.' . $file_extension;
-                $target_file = $target_dir . $new_filename;
+            // Start transaction
+            $conn->begin_transaction();
 
-                // Verify the file type
-                $allowed_types = array('jpg', 'jpeg', 'png', 'gif');
-                if (in_array($file_extension, $allowed_types)) {
-                    if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                        $image_url = '/benfabrics/assets/images/products/' . $new_filename;
-                    } else {
-                        $error_message = "Sorry, there was an error uploading your file.";
-                        // Log the error for debugging
-                        error_log("File upload failed: " . error_get_last()['message']);
-                    }
-                } else {
-                    $error_message = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
-                }
-            }
-
-            // Only proceed with database insert if there's no error
-            if (empty($error_message)) {
-                $sql = "INSERT INTO products (name, description, price, color, fabric_type, stock, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try {
+                // Insert product first
+                $sql = "INSERT INTO products (name, description, price, fabric_type, stock) VALUES (?, ?, ?, ?, ?)";
                 $stmt = $conn->prepare($sql);
-                $stmt->bind_param("ssdssss", $name, $description, $price, $color, $fabric_type, $stock, $image_url);
-
-                if ($stmt->execute()) {
-                    $success_message = "Product added successfully!";
-                } else {
-                    $error_message = "Error adding product: " . $conn->error;
+                $stmt->bind_param("ssdsi", $name, $description, $price, $fabric_type, $stock);
+                
+                if (!$stmt->execute()) {
+                    throw new Exception("Error adding product: " . $conn->error);
                 }
+
+                $product_id = $conn->insert_id;
+
+                // Handle multiple image uploads
+                $total_images = count($_FILES['images']['name']);
+                $colors = $_POST['colors'];
+
+                for ($i = 0; $i < $total_images; $i++) {
+                    if ($_FILES['images']['error'][$i] == 0) {
+                        $file_extension = strtolower(pathinfo($_FILES["images"]["name"][$i], PATHINFO_EXTENSION));
+                        $new_filename = uniqid() . '.' . $file_extension;
+                        $target_file = $target_dir . $new_filename;
+
+                        // Verify file type
+                        $allowed_types = array('jpg', 'jpeg', 'png', 'gif');
+                        if (!in_array($file_extension, $allowed_types)) {
+                            throw new Exception("Sorry, only JPG, JPEG, PNG & GIF files are allowed.");
+                        }
+
+                        if (!move_uploaded_file($_FILES["images"]["tmp_name"][$i], $target_file)) {
+                            throw new Exception("Sorry, there was an error uploading one of your files.");
+                        }
+
+                        // Store relative path without leading slash
+                        $image_url = 'assets/images/products/' . $new_filename;
+                        $color = trim($colors[$i]);
+                        $is_primary = ($i == 0) ? 1 : 0; // First image is primary
+
+                        // Insert image record
+                        $sql = "INSERT INTO product_images (product_id, image_url, color, is_primary) VALUES (?, ?, ?, ?)";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bind_param("issi", $product_id, $image_url, $color, $is_primary);
+                        
+                        if (!$stmt->execute()) {
+                            throw new Exception("Error adding image: " . $conn->error);
+                        }
+                    }
+                }
+
+                // Commit transaction
+                $conn->commit();
+                $success_message = "Product added successfully with all images!";
+            } catch (Exception $e) {
+                // Rollback on error
+                $conn->rollback();
+                $error_message = $e->getMessage();
             }
         } elseif ($_POST['action'] == 'delete' && isset($_POST['product_id'])) {
             $product_id = intval($_POST['product_id']);
+            
+            // The images will be automatically deleted due to ON DELETE CASCADE
             $sql = "DELETE FROM products WHERE id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $product_id);
@@ -76,8 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Fetch all products
-$sql = "SELECT * FROM products ORDER BY created_at DESC";
+// Fetch all products with their primary images
+$sql = "SELECT p.*, pi.image_url, pi.color 
+        FROM products p 
+        LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1 
+        ORDER BY p.created_at DESC";
 $result = $conn->query($sql);
 ?>
 
@@ -140,11 +168,6 @@ $result = $conn->query($sql);
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Color</label>
-                        <input type="text" name="color" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
-                    </div>
-
-                    <div>
                         <label class="block text-sm font-medium text-gray-700">Fabric Type</label>
                         <input type="text" name="fabric_type" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
                     </div>
@@ -153,17 +176,29 @@ $result = $conn->query($sql);
                         <label class="block text-sm font-medium text-gray-700">Stock</label>
                         <input type="number" name="stock" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Product Image</label>
-                        <input type="file" name="image" accept="image/*" required class="mt-1 block w-full">
-                    </div>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Description</label>
                     <textarea name="description" rows="3" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"></textarea>
                 </div>
+
+                <div id="image-uploads" class="space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700">Product Image</label>
+                            <input type="file" name="images[]" accept="image/*" required class="mt-1 block w-full">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700">Color</label>
+                            <input type="text" name="colors[]" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="addImageUpload()" class="text-purple-600 hover:text-purple-700">
+                    + Add Another Image
+                </button>
 
                 <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
                     Add Product
@@ -189,13 +224,18 @@ $result = $conn->query($sql);
                         <?php while($row = $result->fetch_assoc()): ?>
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <img src="<?php echo htmlspecialchars($row['image_url']); ?>" 
-                                         alt="Product" 
-                                         class="h-20 w-20 object-cover rounded"
-                                         onerror="this.src='/benfabrics/assets/images/placeholder.jpg'">
-                                    <?php if (isset($_GET['debug'])): ?>
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            Path: <?php echo htmlspecialchars($row['image_url']); ?>
+                                    <?php if ($row['image_url']): ?>
+                                        <img src="../<?php echo htmlspecialchars($row['image_url']); ?>" 
+                                             alt="Product" 
+                                             class="h-20 w-20 object-cover rounded">
+                                        <?php if (isset($_GET['debug'])): ?>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                Path: <?php echo htmlspecialchars($row['image_url']); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <div class="h-20 w-20 bg-gray-100 flex items-center justify-center rounded">
+                                            <span class="text-gray-400">No image</span>
                                         </div>
                                     <?php endif; ?>
                                 </td>
@@ -223,5 +263,27 @@ $result = $conn->query($sql);
             </div>
         </div>
     </div>
+
+    <script>
+    function addImageUpload() {
+        const container = document.getElementById('image-uploads');
+        const newUpload = document.createElement('div');
+        newUpload.className = 'flex items-center space-x-4';
+        newUpload.innerHTML = `
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700">Product Image</label>
+                <input type="file" name="images[]" accept="image/*" required class="mt-1 block w-full">
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700">Color</label>
+                <input type="text" name="colors[]" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-700">
+                Remove
+            </button>
+        `;
+        container.appendChild(newUpload);
+    }
+    </script>
 </body>
 </html>
